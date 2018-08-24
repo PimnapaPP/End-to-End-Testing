@@ -1,0 +1,88 @@
+import React from "react";
+const puppeteer = require("puppeteer");
+let page;
+let browser;
+const width = 1300;
+const height = 1080;
+const timeout = 30000;
+const LottoWith6digits = ["963623", "555555", "223131"];
+const LottoWithWrongInput = ["963623", "ggg", "555"];
+beforeEach(async () => {
+  browser = await puppeteer.launch({
+    headless: true,
+    slowMo: 70,
+    args: [`--window-size=${width},${height}`],
+    devtools: false
+  });
+  page = await browser.newPage();
+  await page.setViewport({ width, height });
+});
+
+async function prepareInput(lottoNumber) {
+  await page.goto("https://news.sanook.com/lotto/", {
+    waitUntil: "domcontentloaded"
+  });
+  await page.waitForSelector(".lotto-form__input");
+  const lottoTextInputs = await page.$$(".lotto-form__input");
+  for (let i = 0; i < lottoTextInputs.length; i++) {
+    await lottoTextInputs[i].click();
+    await lottoTextInputs[i].type(lottoNumber[i]);
+  }
+  await page.click('[title="ตรวจสลากฯ ของคุณ"]');
+}
+
+describe("Lotto Page", () => {
+  test(
+    "should go to sanook lotto page",
+    async () => {
+      await page.goto("https://www.sanook.com/", {
+        waitUntil: "domcontentloaded"
+      });
+      await page.click('[href="http://news.sanook.com/lotto/"]');
+      browser.on("targetcreated", async target => {
+        const lottoPage = await target.page();
+        expect(lottoPage.url()).toBe("https://news.sanook.com/lotto/");
+      });
+      browser.close();
+    },
+    timeout
+  );
+
+  // test('should display lotto number correctly',async()=> {
+  //     await prepareInput(LottoWith6digits);
+  //     await page.waitForSelector(".lotto__result--item")
+  //     let lottoNum =[]
+  //     const items = await page.$$('.lotto__result--item')
+  //     for(const item of items){
+  //       const number = await item.$eval('strong',st => st.innerHTML)
+  //       await lottoNum.push(number)
+  //     }
+  //     expect(lottoNum[0]).toBe('963623')
+  //     expect(lottoNum[1]).toBe('555555')
+  //     expect(lottoNum[2]).toBe('223131')
+  //     browser.close()
+  // },timeout)
+
+  // test('should display lotto result color correctly',async() => {
+  //   await prepareInput(LottoWith6digits);
+  //   await page.waitForSelector(".lotto__result--item")
+  //   let results = await page.$$('.lotto__result--item strong:nth-child(1)')
+  //   expect(results[0]._remoteObject.description === "strong.lotto__number.lotto__green.sukhumvitbold").toBeTruthy()
+  //   expect(results[1]._remoteObject.description === "strong.lotto__number.lotto__green.sukhumvitbold").toBeFalsy()
+  //   expect(results[2]._remoteObject.description === "strong.lotto__number.lotto__green.sukhumvitbold").toBeFalsy()
+  //   browser.close()
+  // },timeout)
+
+  // test('should display pop up when type wrong input',async()=> {
+
+  //   page.on('dialog', async (dialog) => {
+  //     await dialog.dismiss();
+  //     expect(dialog.type()==="alert").toBeTruthy()
+  //   })
+  //   await prepareInput(LottoWithWrongInput)
+  // },timeout)
+});
+
+// afterEach(() => {
+//     browser.close();
+//   });
